@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IT Helpdesk Dashboard</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 20px;
+            color: #333;
+            background-color: #158f50;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        /* Container for the ticket status boxes */
+        .ticket-status {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        /* Universal styles for all ticket boxes */
+        .ticket-box {
+            flex: 1;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .ticket-box span {
+            display: block;
+            font-size: 2rem;
+            margin-top: 5px;
+        }
+
+        /* Specific colors matching the chart */
+        .request-color { background-color: #3498db; } /* Blue */
+        .uphold-color { background-color: #f39c12; }  /* Orange */
+        .done-color { background-color: #2ecc71; }    /* Green */
+
+        /* Form section */
+        .form-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .form-section input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-section textarea,
+        .form-section select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-section input[type="submit"]{
+            width: 20px;
+            padding: 10px;
+            margin: 5px;
+            border: #0dde75;
+            border-radius: 4px;
+            background-color: #ccb30f;
+            border-top: 3px;
+            display: block;
+        }
+        .notice {
+            grid-column: 1 / -1;
+            padding: 12px 16px;
+            border-radius: 4px;
+        }
+        .notice.success { background: #e4f5eb; color: #17683b; }
+        .notice.error { background: #fde9e7; color: #922d25; }
+
+        /* Bar Chart Section */
+        .chart-section {
+            background: #ccc ;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        /* Container that holds the bars and Y-axis scale */
+        .bar-graph-container {
+            display: flex;
+            height: 200px;
+            align-items: flex-end;
+            justify-content: space-around;
+            border-bottom: 2px solid #bdc3c7;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Individual column container */
+        .bar-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 60px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        /* The actual colored visual bar */
+        .bar {
+            width: 100%;
+            height: 0%; /* Initialized by JS */
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease-out; /* Smooth growth animation */
+            position: relative;
+        }
+
+        /* Percentage tag directly above each individual bar */
+        .bar-percentage {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        /* Labels underneath the baseline axis line */
+        .bar-labels {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+
+        .bar-labels div {
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+    <h1>IT Helpdesk Dashboard</h1> 
+    
+    <div class="dashboard-container">
+        <!-- Ticket Counter Boxes Component -->
+        <div class="ticket-status"> 
+            <div class="ticket-box request-color">Request <span id="count-request">{{ ticket_counts['Request'] }}</span></div> 
+            <div class="ticket-box uphold-color">Uphold <span id="count-uphold">{{ ticket_counts['Uphold'] }}</span></div> 
+            <div class="ticket-box done-color">Done <span id="count-done">{{ ticket_counts['Done'] }}</span></div> 
+        </div> 
+
+        {% if message %}
+        <div class="notice {{ message_type }}" role="status">{{ message }}</div>
+        {% endif %}
+
+        <!-- Input Form Component -->
+    <form class="form-section" action="{{ url_for('log_ticket', view='demo') }}" method="post">
+            <h2>Log New Ticket</h2>
+            <label for="username">Name of the Requester</label> 
+            <input type="text" id="username" name="username" value="{{ form_data.get('username', '') }}" placeholder="Employee name" maxlength="120" required> 
+            
+            <label for="issue">IT Issue</label> 
+            <textarea id="issue" name="issue" placeholder="Describe the IT issue..." maxlength="2000" rows="4" required>{{ form_data.get('issue', '') }}</textarea>
+
+            <label for="category">Problem category</label>
+            <select id="category" name="category" required>
+                <option value="" disabled {% if not form_data.get('category') %}selected{% endif %}>Select a category</option>
+                {% for category in ['Hardware', 'Software', 'Network', 'Other'] %}
+                <option value="{{ category }}" {% if form_data.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Submit Ticket</button>
+    </form>
+        <!-- Dynamic Bar Graph Component -->
+        <div class="chart-section">
+            <div class="chart-title">Ticket Allocation Statistics</div>
+            
+            <div class="bar-graph-container">
+                <!-- Request Bar Column -->
+                <div class="bar-column">
+                    <div class="bar-percentage" id="pct-request">0%</div>
+                    <div class="bar request-color" id="bar-request"></div>
+                </div>
+                
+                <!-- Uphold Bar Column -->
+                <div class="bar-column">
+                    <div class="bar-percentage" id="pct-uphold">0%</div>
+                    <div class="bar uphold-color" id="bar-uphold"></div>
+                </div>
+                
+                <!-- Done Bar Column -->
+                <div class="bar-column">
+                    <div class="bar-percentage" id="pct-done">0%</div>
+                    <div class="bar done-color" id="bar-done"></div>
+                </div>
+            </div>
+
+            <!-- Axis Labels underneath bars -->
+            <div class="bar-labels">
+                <div>Req</div>
+                <div>Uphold</div>
+                <div>Done</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateBarGraph() {
+            // 1. Gather raw data counts directly from the status box elements
+            const requests = parseInt(document.getElementById('count-request').innerText) || 0;
+            const upholds = parseInt(document.getElementById('count-uphold').innerText) || 0;
+            const dones = parseInt(document.getElementById('count-done').innerText) || 0;
+
+            const total = requests + upholds + dones;
+
+            if (total === 0) {
+                // If there are zero entries, clear the bars out completely
+                document.getElementById('bar-request').style.height = '0%';
+                document.getElementById('bar-uphold').style.height = '0%';
+                document.getElementById('bar-done').style.height = '0%';
+                return;
+            }
+
+            // 2. Calculate distribution percentages relative to total ticket sum
+            const reqPct = ((requests / total) * 100).toFixed(1);
+            const uphPct = ((upholds / total) * 100).toFixed(1);
+            const donePct = ((dones / total) * 100).toFixed(1);
+
+            // 3. Dynamic adjustment mapping percentages directly to element style heights
+            document.getElementById('pct-request').innerText = `${reqPct}%`;
+            document.getElementById('bar-request').style.height = `${reqPct}%`;
+
+            document.getElementById('pct-uphold').innerText = `${uphPct}%`;
+            document.getElementById('bar-uphold').style.height = `${uphPct}%`;
+
+            document.getElementById('pct-done').innerText = `${donePct}%`;
+            document.getElementById('bar-done').style.height = `${donePct}%`;
+        }
+
+        // Execute rendering sequence immediately following page setup complete
+        window.onload = updateBarGraph;
+
+    </script>
+</body> 
+</html>
